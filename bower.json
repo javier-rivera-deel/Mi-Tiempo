@@ -1,0 +1,34 @@
+{
+  "name": "MiTiempo",
+  "version": "0.0.1",
+  "description": "aplicacion para el tiempo",
+  "main": "index.html",
+  "moduleType": [
+    "globals"
+  ],
+  "keywords": [
+    "weather",
+    "polymer",
+    "tiempo"
+  ],
+  "authors": [
+    "Javier Rivera"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "iron-ajax": "PolymerElements/iron-ajax#1.0.0",
+    "iron-image": "PolymerElements/iron-image#1.0.0",
+    "moment": "~2.10.6",
+    "neon-animation": "PolymerElements/neon-animation#1.0.0",
+    "paper-header-panel": "PolymerElements/paper-header-panel#1.0.0",
+    "paper-styles": "PolymerElements/paper-styles#1.0.0",
+    "polymer": "Polymer/polymer#1.0.0"
+  }
+}

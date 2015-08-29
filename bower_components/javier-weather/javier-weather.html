@@ -1,0 +1,218 @@
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../iron-image/iron-image.html">
+<link rel="import" href="../javier-current/javier-current.html">
+<link rel="import" href="../javier-forecast/javier-forecast.html">
+<link rel="import" href="../neon-animation/neon-animated-pages.html">
+<link rel="import" href="../neon-animation/neon-animatable.html">
+<link rel="import" href="../neon-animation/neon-animation.html">
+
+<dom-module id="javier-weather">
+	<style>
+	:host
+	{
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+		display: block;
+	}
+	iron-image
+	{
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		background-color: lightgray;
+	}
+	#pages
+	{
+		position: absolute;
+		width: 100%;
+		height: 100%;
+	}
+
+	</style>
+	<template>
+		<iron-image sizing="cover" preload src="{{imageSrc}}"></iron-image>
+		<iron-ajax
+			auto
+			handle-as="json"
+			url="http://api.openweathermap.org/data/2.5/weather?q=maracaibo&units=metric&lang=sp&APPID=5c9b4ce5bc8edddef8ca2f148ea526dd"
+			on-response="getCurrentData">
+		</iron-ajax>
+		<iron-ajax
+			auto
+			handle-as="json"
+			url="http://api.openweathermap.org/data/2.5/forecast/daily?id=3633006&cnt=16&units=metric&lang=sp&APPID=5c9b4ce5bc8edddef8ca2f148ea526dd"
+			on-response="getForecastData">
+		</iron-ajax>
+		<neon-animated-pages id="pages" class="flex" entry-animation="{{entryAnimation}}" exit-animation="{{exitAnimation}}" on-track="handleTrack">
+			<neon-animatable>
+				<javier-current id="currentWeather"></javier-current>
+			</neon-animatable>
+			<neon-animatable>
+			<javier-forecast id="forecast"></javier-forecast>
+			</neon-animatable>
+		</neon-animated-pages>
+	</template>
+</dom-module>
+<script type="text/javascript" src="moment/moment.js"></script>
+<script type="text/javascript" src="moment/locale/es.js"></script>
+
+<script>
+// Create the XHR object.
+function createCORSRequest(method, url) 
+{
+  var xhr = new XMLHttpRequest();
+  if ("withCredentials" in xhr)
+  {
+    // XHR for Chrome/Firefox/Opera/Safari.
+    xhr.open(method, url, true);
+  } 
+  else if (typeof XDomainRequest != "undefined") 
+  {
+    // XDomainRequest for IE.
+    xhr = new XDomainRequest();
+    xhr.open(method, url);
+  } 
+  else
+  {
+    // CORS not supported.
+    xhr = null;
+  }
+  return xhr;
+}
+
+// Helper method to parse the title tag from the response.
+function getTitle(text) 
+{
+  return text.match('<title>(.*)?</title>')[1];
+}
+
+// Make the actual CORS request.
+function makeCorsRequest() {
+  // All HTML5 Rocks properties support CORS.
+  var url = 'http://api.openweathermap.org/data/2.5/weather?q=maracaibo&units=metric&lang=sp';
+
+  var xhr = createCORSRequest('GET', url);
+  console.log(xhr);
+  if (!xhr) {
+    alert('CORS not supported');
+    return;
+  }
+
+  // Response handlers.
+  xhr.onload = function() {
+    var text = xhr.responseText;
+    var title = getTitle(text);
+    alert('Response from CORS request to ' + url + ': ' + title);
+  };
+
+  xhr.onerror = function() {
+    alert('Woops, there was an error making the request.');
+  };
+
+  xhr.send();
+}
+
+
+
+</script>
+
+
+
+<script>
+	Polymer({
+		is: 'javier-weather',
+		properties:
+	    {
+	 		imageSrc: String
+		},
+		ready: function()
+		{
+			this.$.pages.selected = 0;
+			this.entryAnimation = 'slide-up-animation';
+			this.entryAnimation = 'fade-out-animation';
+		},
+		getCurrentData: function(event)
+		{
+			//console.log(event.detail.response);
+			var response = event.detail.response;
+			this.imageSrc ="img/" + response.weather[0].icon + "_bg.jpg";
+			var current = this.$.currentWeather;
+			console.log(current);
+
+			current.temp = Number(response.main.temp).toFixed(1) + "°C";
+			current.humidity = Number(response.main.humidity).toFixed(1) + "%";
+			//current.icon = "img/" + response.weather[0].icon + ".png";
+			current.desc = response.weather[0].description;
+			current.city = response.name;
+		},
+		getForecastData: function(event)
+		{
+			//console.log(event.detail.response);
+			var response = event.detail.response;
+			var forecast = this.$.forecast;
+			var list = response.list;
+			var locale = window.navigator.userLanguage || window.navigator.language;
+			
+			for (var i = 0; i < list.length; i++) 
+			{
+				list[i].icon = "img/" + list[i].weather[0].icon + ".png";
+				list[i].desc = this.capitalize(list[i].weather[0].description);
+				list[i].humidity = list[i].humidity + "%";
+				list[i].temp.max = Number(list[i].temp.max).toFixed(1) + "°C";
+				list[i].temp.min = Number(list[i].temp.min).toFixed(1) + "°C";
+
+				var day = moment.unix(Number(list[i].dt));
+				day.locale(locale);
+
+				
+
+				//console.log(day.format("dddd[, ]DD/MM/YYYY"));
+
+				list[i].date = day.format("dddd[, ]DD/MM/YYYY");
+			};
+
+			forecast.list = list;
+		},
+		capitalize: function(s)
+		{
+			return s[0].toUpperCase() + s.slice(1);
+		},
+		handleTrack: function(e)
+		{
+			switch(e.detail.state)
+			{
+				case 'start':
+					this.sizeTapped = e.detail.y;
+					//console.log(this.sizeTapped);
+					break;
+				case 'track':
+
+					break;
+
+				case 'end':
+					//console.log("hola");
+					if(this.$.pages.selected == 0)
+					{
+						if(e.detail.y < (this.sizeTapped-100))
+						{
+							this.exitAnimation = 'fade-out-animation';
+							this.entryAnimation = 'slide-down-animation';
+							this.$.pages.selected = 1;
+						}
+					}
+					if(this.$.pages.selected == 1 && this.sizeTapped < 50)
+					{
+						if(e.detail.y > (this.sizeTapped+100))
+						{
+							this.exitAnimation = 'slide-up-animation';
+							this.entryAnimation = 'fade-in-animation';
+							this.$.pages.selected = 0;
+						}
+					}
+					break;
+			}
+		}
+		
+	});
+</script>
